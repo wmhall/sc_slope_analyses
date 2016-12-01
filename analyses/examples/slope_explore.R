@@ -6,10 +6,10 @@ file_names <- c(by_study =
                   "output/slopes_overall.rds")
 
 slopes_list <- 
-map(file_names, read_rds)
+  map(file_names, read_rds)
 
 sc_data <- 
-read_csv("data/preprocessed/all_data.csv") %>% 
+  read_csv("data/preprocessed/all_data.csv") %>% 
   select(ID, gender, data_id, sc) %>% 
   distinct()
 
@@ -27,13 +27,13 @@ clean_slopes <- . %>%
 
 slope_overall_df <- 
   slopes_list$overall %>% clean_slopes
-  
+
 model_data <- 
-left_join(sc_data, slope_overall_df)
+  left_join(sc_data, slope_overall_df)
 
 mf <- 
-c(male_cp = conv_pos_maleC ~ 1 + sc*gender, 
-  female_cp = conv_pos_femaleC ~ 1 + sc*gender)
+  c(male_cp = conv_pos_maleC ~ 1 + sc*gender, 
+    female_cp = conv_pos_femaleC ~ 1 + sc*gender)
 
 mf_df <- 
   data_frame(mid = names(mf), mf= mf )
@@ -46,7 +46,7 @@ data_df <-
              data = list(femaleC_df, maleC_df))
 
 model_df <- 
-data_df %>% tidyr::expand(gender_id, mid = mf_df$mid) %>% 
+  data_df %>% tidyr::expand(gender_id, mid = mf_df$mid) %>% 
   left_join(data_df) %>% 
   left_join(mf_df)
 
@@ -79,17 +79,21 @@ plot_data_overall <-
 # slope anlyses, split by study -------------------------------------------
 
 slope_data_by_study_df <- 
-slopes_list$by_study %>%
+  slopes_list$by_study %>%
   split(.$data_id) %>% 
   map(clean_slopes) %>% 
   bind_rows(.id = "data_id")
 
 model_data_by_study <- 
   left_join(sc_data, slope_data_by_study_df) %>% 
-  nest(-data_id)
+  nest(-data_id) %>% 
+  mutate(female = map(data, mutate, gender = if_else(gender == "Female",0, 1))) %>% 
+  mutate(male = map(data, mutate, gender = if_else(gender == "Female",1, 0))) %>% 
+  select(-data) %>% 
+  gather(gender_id, data, female, male)
 
 model_df_by_study <- 
-model_df %>% tidyr::expand(gender_id, mid, data_id = slope_data_by_study_df$data_id) %>% 
+  model_df %>% tidyr::expand(gender_id, mid, data_id = slope_data_by_study_df$data_id) %>% 
   left_join(model_data_by_study) %>% 
   left_join(mf_df)
 
@@ -101,11 +105,13 @@ fm_by_study <-
 fm_by_study %>% 
   select(gender_id, mid, data_id, fm_tidy) %>% 
   unnest() %>% 
-  filter(term == "sc" & p.value < .05)
+  filter(term == "sc" & data_id == "ees")
 
 
 plots_by_study <- 
-model_data_by_study %>% 
+  model_data_by_study %>% 
+  filter(gender_id == "female") %>% 
+  mutate(data = map(data, mutate, gender = if_else(gender == 0, "Female", "Male"))) %>% 
   unnest() %>% 
   gather(slope_name, slope, conv_pos_femaleC, conv_pos_maleC) %>% 
   nest(-data_id, -slope_name) %>% 
@@ -115,10 +121,10 @@ model_data_by_study %>%
 # write out the analyses --------------------------------------------------
 
 files_to_write <- 
-list(fm_slope_overall.rds = fm_df,
-     fm_slope_by_study.rds = fm_by_study,
-     plots_overall.rds = plot_data_overall,
-     plots_by_study.rds = plots_by_study)
+  list(fm_slope_overall.rds = fm_df,
+       fm_slope_by_study.rds = fm_by_study,
+       plots_overall.rds = plot_data_overall,
+       plots_by_study.rds = plots_by_study)
 
 #write files
 
