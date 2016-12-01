@@ -2,7 +2,7 @@
 title: "slope_anlayses_summary"
 author: "William Hall"
 date: "December 1, 2016"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
