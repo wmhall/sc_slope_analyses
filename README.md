@@ -1,2 +1,1 @@
-# sc_slope_analyses
-analyses of sc slope data
+# template file structure for research projects

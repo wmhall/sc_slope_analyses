@@ -1,0 +1,210 @@
+---
+title: "slope_anlayses_summary"
+author: "William Hall"
+date: "December 1, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath("../.."))
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+source("R/pvaluer.R")
+
+files_to_read <- 
+list(fm_overall = "output/fm_slope_overall.rds",
+     fm_by_study = "output/fm_slope_by_study.rds",
+     plots_overall = "output/plots_overall.rds",
+    plots_by_study = "output/plots_by_study.rds")
+
+dfs_and_plots <- 
+map(files_to_read, read_rds)
+
+
+fms <- dfs_and_plots[1:2] %>% 
+  map(filter, gender_id == "female") %>% 
+  map_at("fm_overall", mutate, data_id = "overall") %>% 
+  map(select, gender_id, mid, data_id, fm_tidy) %>% 
+  map(unnest) %>% 
+  bind_rows() %>% 
+  map_at("p.value", format_pval) %>% as_data_frame %>% 
+  map_if(is.numeric, round, 2) %>% as_data_frame()
+
+ss <- 
+dfs_and_plots[1:2] %>%  
+  map_at("fm_overall", mutate, data_id = "overall") %>% 
+  map(select, gender_id, mid, data_id, fm_tidy) %>% 
+  map(unnest) %>% 
+  bind_rows() %>% 
+  filter(term == "sc") %>% 
+  map_at("p.value", format_pval) %>% as_data_frame %>% 
+  map_if(is.numeric, round, 2) %>% as_data_frame()
+
+
+```
+
+
+## Stigma consciousness predicting social identity reactance during conversations with men.
+
+###Overall
+
+```{r, results='asis', echo=FALSE}
+fms %>% 
+  filter(mid == "male_cp" & data_id == "overall") %>% 
+  select(-gender_id, -mid, -data_id) %>% 
+  knitr::kable()
+```
+
+####Simple slopes
+
+
+```{r, results='asis', echo=FALSE}
+ss %>% 
+  filter(mid == "male_cp" & data_id == "overall") %>% 
+  select(-mid, -data_id) %>% 
+  knitr::kable()
+```
+
+### Split by study
+
+```{r, results='asis', echo=FALSE}
+fms %>% 
+  filter(mid == "male_cp" & data_id != "overall") %>% 
+  select(-gender_id, -mid) %>% 
+  knitr::kable()
+
+```
+
+
+####Simple slopes
+
+
+```{r, results='asis', echo=FALSE}
+ss %>% 
+  filter(mid == "male_cp" & data_id != "overall") %>% 
+  select(-mid) %>% 
+  arrange(data_id) %>% 
+  knitr::kable()
+```
+
+### Plots 
+
+#### Overall
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_overall %>% 
+  filter(slope_name == "conv_pos_maleC") %>% 
+  .$plots
+```
+
+
+#### By study
+
+##### EES
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_by_study %>% 
+  filter(slope_name == "conv_pos_maleC" & data_id == "ees") %>% 
+  .$plots
+```
+
+##### GSS
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_by_study %>% 
+  filter(slope_name == "conv_pos_maleC" & data_id == "gss") %>% 
+  .$plots
+```
+
+##### HWS
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_by_study %>% 
+  filter(slope_name == "conv_pos_maleC" & data_id == "hws") %>% 
+  .$plots
+```
+
+
+## Stigma consciousness predicting social identity reactance during conversations with women
+
+###Overall
+
+```{r, results='asis', echo=FALSE}
+fms %>% 
+  filter(mid == "female_cp" & data_id == "overall") %>% 
+  select(-gender_id, -mid, -data_id) %>% 
+  knitr::kable()
+```
+
+####Simple slopes
+
+
+```{r, results='asis', echo=FALSE}
+ss %>% 
+  filter(mid == "female_cp" & data_id == "overall") %>% 
+  select(-mid, -data_id) %>% 
+  knitr::kable()
+```
+
+### Split by study
+
+```{r, results='asis', echo=FALSE}
+fms %>% 
+  filter(mid == "female_cp" & data_id != "overall") %>% 
+  select(-gender_id, -mid) %>% 
+  knitr::kable()
+
+```
+
+
+####Simple slopes
+
+
+```{r, results='asis', echo=FALSE}
+ss %>% 
+  filter(mid == "female_cp" & data_id != "overall") %>% 
+  select(-mid) %>% 
+  arrange(data_id) %>% 
+  knitr::kable()
+```
+
+### Plots 
+
+#### Overall
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_overall %>% 
+  filter(slope_name == "conv_pos_femaleC") %>% 
+  .$plots
+```
+
+
+#### By study
+
+##### EES
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_by_study %>% 
+  filter(slope_name == "conv_pos_femaleC" & data_id == "ees") %>% 
+  .$plots
+```
+
+##### GSS
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_by_study %>% 
+  filter(slope_name == "conv_pos_femaleC" & data_id == "gss") %>% 
+  .$plots
+```
+
+##### HWS
+
+```{r, results='asis', echo=FALSE, warning= FALSE}
+dfs_and_plots$plots_by_study %>% 
+  filter(slope_name == "conv_pos_femaleC" & data_id == "hws") %>% 
+  .$plots
+```
+
